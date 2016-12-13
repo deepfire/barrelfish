@@ -191,7 +191,7 @@ aarch64_system _
 x86_system _
     = ToolDetails {
         toolPath = "",
-        toolPrefix = "x86_64-linux-gnu-"
+        toolPrefix = ""
       }
 
 --
