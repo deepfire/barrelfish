@@ -26,6 +26,7 @@ NIC_MODEL="${NIC_MODEL:-e1000}"
 DEBUGCON="debugcon.out"
 NO_DISPLAY="-display none"
 
+GDB_EXTRA=""
 
 usage () {
     echo "Usage: $0 --menu <file> --arch <arch>  [options]"
@@ -44,6 +45,7 @@ usage () {
     echo "    --hagfish <file>   (Hagfish boot loader, defaults to $HAGFISH_LOCATION)"
     echo "    --debugcon <file>  (Enable QEMU debug port & qemu_debug_puts() (x86-*-only))"
     echo "    --display          (Do not disable QEMU display)"
+    echo "    --gdb-extra <cmd>  (Extra GDB commands)"
     echo "  "
     echo "  The following environment variables are considered:"
     echo "    QEMU_PATH         (Path for qemu-system-* binary)"
@@ -98,6 +100,9 @@ while test $# != 0; do
         ;;
     "--display")
         NO_DISPLAY=""
+        ;;
+    "--gdb-extra")
+        shift; GDB_EXTRA="$1"
         ;;
     *)
         echo "Unknown option $1 (try: --help)" >&2
@@ -265,7 +270,6 @@ fi
 
 
 # Now we run the debugger instead
-GDB_ARGS="-x $DEBUG_SCRIPT"
 SERIAL_OUTPUT=file:/dev/stdout
 PORT=$((10000 + UID))
 
@@ -286,8 +290,6 @@ if test -f $PIDFILE; then
     rm -f $PIDFILE
     fi
 fi
-
-echo args = $GDB_ARGS
 
 cat > barrelfish_debug.gdb <<EOF
 # Connect to QEMU instance
@@ -340,7 +342,7 @@ eval $QEMU_INVOCATION
 if test $? -eq 0; then
     stty sane
     trap '' INT
-    ${GDB} -x barrelfish_debug.gdb ${GDB_ARGS}
+    ${GDB} -quiet -x ${DEBUG_SCRIPT} -x barrelfish_debug.gdb ${GDB_EXTRA}
     PID=`cat ${PIDFILE}`
     kill ${PID} > /dev/null || true
     rm -f $PIDFILE
