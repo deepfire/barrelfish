@@ -292,6 +292,11 @@ echo args = $GDB_ARGS
 cat > barrelfish_debug.gdb <<EOF
 # Connect to QEMU instance
 target remote localhost:$PORT
+set architecture i386:x86-64
+# b *0xfffffe00032229f0
+file x86_64/sbin/cpu
+c
+
 EOF
 
 if test -z "$EFI"; then
