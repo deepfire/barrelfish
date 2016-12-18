@@ -156,6 +156,7 @@ struct task_state_segment {
     uint16_t    iomap_base;
 } __attribute__ ((packed));
 
+void setup_early_catchall_idt (void);
 void setup_default_idt(void);
 
 errval_t irq_connect(struct capability *dest_cap, capaddr_t endpoint_adr);

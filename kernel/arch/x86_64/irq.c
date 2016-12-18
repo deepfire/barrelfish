@@ -380,6 +380,14 @@ HW_IRQ(254);
 // Reserved as "unhandled exception" handler
 HW_EXCEPTION_NOERR(666);
 
+void __attribute__ ((visibility ("hidden"))) hwexc_panic_vec(void);	\
+__asm (									\
+       "\t.text                                          \n\t"		\
+       "\t.type hwexc_panic_vec, @function               \n\t"  	\
+       "hwexc_panic_vec:                                 \n\t"		\
+       "jmp    hwexc_panic                               \n\t"		\
+									);
+
 #define ERR_PF_PRESENT          (1 << 0)
 #define ERR_PF_READ_WRITE       (1 << 1)
 #define ERR_PF_USER_SUPERVISOR  (1 << 2)
@@ -1118,6 +1126,33 @@ static void setgd(struct gate_descriptor *gd, void (* handler)(void),
     gd->gd_type = type;
     gd->gd_dpl = dpl;
     gd->gd_p = 1;
+}
+
+/**
+ * \brief Sets up an early IDT to avoid silent deaths.
+ */
+static void __attribute__((used)) hwexc_panic (void)
+{
+}
+
+void setup_early_catchall_idt (void)
+{
+    struct region_descriptor region = {         // set default IDT
+        .rd_limit = NIDT * sizeof(idt[0]) - 1,
+        .rd_base = (uint64_t)&idt
+    };
+    int i;
+
+    // reset IDT
+    memset((void *)&idt, 0, NIDT * sizeof(idt[0]));
+
+    // initialize IDT with panic generic handlers
+    for (i = 0; i < NIDT; i++)
+        setgd(&idt[i], hwexc_panic_vec, 0, SDT_SYSTGT, SEL_KPL,
+              GSEL(KCODE_SEL, SEL_KPL));
+
+    /* Load IDT register */
+    __asm volatile("lidt %0" :: "m" (region));
 }
 
 /**

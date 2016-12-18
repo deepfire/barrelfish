@@ -586,6 +586,9 @@ void arch_init(uint64_t magic, void *pointer)
     // the first kernel
     serial_console_init((magic == MULTIBOOT_INFO_MAGIC));
 
+    // Avoid dying silently -- jump to hwexc_panic() instead.
+    setup_early_catchall_idt ();
+
     void __attribute__ ((noreturn)) (*reloc_text_init)(void) =
         (void *)local_phys_to_mem((lpaddr_t)text_init);
     struct Elf64_Shdr *rela, *symtab;
