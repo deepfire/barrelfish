@@ -435,7 +435,13 @@ static void  __attribute__ ((noreturn, noinline)) text_init(void)
      * Reset paging once more to use relocated data structures and map in
      * whole of kernel and available physical memory. Map out low memory.
      */
+    printf          ("ATC paging_x86_64_reset ()\n");
+    dump_idt ();
+    qemu_debug_puts ("ATC paging_x86_64_reset ()\n");
     paging_x86_64_reset();
+    qemu_debug_puts ("..back from paging_x86_64_reset ()\n");
+    /* printf          ("..back from paging_x86_64_reset ()\n"); */
+    /* qemu_debug_puts ("done a printf ()..\n"); */
 
     // Relocate global to "memory"
     global = (struct global*)local_phys_to_mem((lpaddr_t)global);
@@ -476,16 +482,23 @@ static void  __attribute__ ((noreturn, noinline)) text_init(void)
     // Arch-independent early startup
     kernel_startup_early();
 
+    qemu_debug_puts ("ATC qemu_debug_printf (), brace yourself..\n");
+    qemu_debug_printf ("ATC serial_console_init () -- %s\n", "loolll");
     // XXX: re-init the serial driver, in case the port changed after parsing args
     serial_console_init(false);
+    qemu_debug_puts ("..back from serial_console_init ()\n");
 
+    qemu_debug_puts ("ATC setup_default_idt ()\n");
     // Setup IDT
     setup_default_idt();
+    qemu_debug_puts ("..back from setup_default_idt ()\n");
     idt_initialized = true;
 
+    qemu_debug_puts ("ATC mcheck_init ()\n");
     // Enable machine check reporting
     mcheck_init();
 
+    qemu_debug_puts ("ATC apic_init ()\n");
     // Initialize local APIC
     apic_init();
 
@@ -498,6 +511,7 @@ static void  __attribute__ ((noreturn, noinline)) text_init(void)
         pic_init();
     }
 
+    qemu_debug_puts ("ATC rtc_init ()\n");
     // Initialize real-time clock
     rtc_init();
 
@@ -524,6 +538,7 @@ static void  __attribute__ ((noreturn, noinline)) text_init(void)
     // Enable "no execute" page-level protection bit
     ia32_efer_nxe_wrf(NULL, 1);
 
+    qemu_debug_puts ("ATC enable_fpu ()\n");
     // Enable FPU and MMX
     enable_fpu();
 
@@ -542,6 +557,7 @@ static void  __attribute__ ((noreturn, noinline)) text_init(void)
     // Setup Page Attribute Table MSR
     configure_page_attribute_table();
 
+    qemu_debug_puts ("ATC kernel_startup ()\n");
     // Call main kernel startup function -- this should never return
     kernel_startup();
 
@@ -580,6 +596,7 @@ extern int _start_kernel_text, _end_kernel_text;
  */
 void arch_init(uint64_t magic, void *pointer)
 {
+
     // Sanitize the screen
     conio_cls();
     // Initialize serial, only initialize HW if we are
@@ -734,6 +751,7 @@ void arch_init(uint64_t magic, void *pointer)
     debug_relocate_dynsyms (syms, nsyms, X86_64_MEMORY_OFFSET - X86_64_START_KERNEL_PHYS + (uint64_t) &_start_kernel);
 #endif
 
+    printf("About to call reloc_text_init() at 0x%"PRIxLVADDR"\n", (long unsigned int) reloc_text_init);
     // Call aliased text_init() function and continue initialization
     reloc_text_init();
 }
