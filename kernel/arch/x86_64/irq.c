@@ -54,6 +54,7 @@
 #include <x86.h>
 #include <dispatch.h>
 #include <wakeup.h>
+#include <arch/x86/debug.h>
 #include <arch/x86/perfmon.h>
 #include <arch/x86/barrelfish_kpi/perfmon.h>
 #include <arch/x86/pic.h>
@@ -1133,6 +1134,7 @@ static void setgd(struct gate_descriptor *gd, void (* handler)(void),
  */
 static void __attribute__((used)) hwexc_panic (void)
 {
+    qemu_debug_puts ("hwexc_panic reached!\n");
 }
 
 void setup_early_catchall_idt (void)
@@ -1160,19 +1162,23 @@ void setup_early_catchall_idt (void)
  */
 void setup_default_idt(void)
 {
+    qemu_debug_puts ("paging from setup_default_idt ()\n");
     struct region_descriptor region = {         // set default IDT
         .rd_limit = NIDT * sizeof(idt[0]) - 1,
         .rd_base = (uint64_t)&idt
     };
     int i;
 
+    qemu_debug_puts ("paging from setup_default_idt ()\n");
     // reset IDT
     memset((void *)&idt, 0, NIDT * sizeof(idt[0]));
+    qemu_debug_puts ("IDT clean\n");
 
     // initialize IDT with default generic handlers
     for (i = 0; i < NIDT; i++)
         setgd(&idt[i], hwexc_666, 0, SDT_SYSIGT, SEL_KPL,
               GSEL(KCODE_SEL, SEL_KPL));
+    qemu_debug_puts ("default generic handlers installed\n");
 
     /* Setup exception handlers */
     setgd(&idt[0], hwexc_0, 0, SDT_SYSIGT, SEL_KPL, GSEL(KCODE_SEL, SEL_KPL));
@@ -1196,6 +1202,7 @@ void setup_default_idt(void)
     setgd(&idt[18], hwexc_18, 0, SDT_SYSIGT, SEL_KPL, GSEL(KCODE_SEL, SEL_KPL));
     setgd(&idt[19], hwexc_19, 0, SDT_SYSIGT, SEL_KPL, GSEL(KCODE_SEL, SEL_KPL));
     // Interrupts 20 - 31 are reserved
+    qemu_debug_puts ("exception handlers installed\n");
 
     /* Setup classic PIC interrupt handlers */
     setgd(&idt[32], hwirq_32, 0, SDT_SYSIGT, SEL_KPL, GSEL(KCODE_SEL, SEL_KPL));
@@ -1214,6 +1221,7 @@ void setup_default_idt(void)
     setgd(&idt[45], hwirq_45, 0, SDT_SYSIGT, SEL_KPL, GSEL(KCODE_SEL, SEL_KPL));
     setgd(&idt[46], hwirq_46, 0, SDT_SYSIGT, SEL_KPL, GSEL(KCODE_SEL, SEL_KPL));
     setgd(&idt[47], hwirq_47, 0, SDT_SYSIGT, SEL_KPL, GSEL(KCODE_SEL, SEL_KPL));
+    qemu_debug_puts ("PIC handlers installed\n");
 
     // Setup generic interrupt handlers
     setgd(&idt[48], hwirq_48, 0, SDT_SYSIGT, SEL_KPL, GSEL(KCODE_SEL, SEL_KPL));
@@ -1231,10 +1239,12 @@ void setup_default_idt(void)
     setgd(&idt[59], hwirq_59, 0, SDT_SYSIGT, SEL_KPL, GSEL(KCODE_SEL, SEL_KPL));
     setgd(&idt[60], hwirq_60, 0, SDT_SYSIGT, SEL_KPL, GSEL(KCODE_SEL, SEL_KPL));
     setgd(&idt[61], hwirq_61, 0, SDT_SYSIGT, SEL_KPL, GSEL(KCODE_SEL, SEL_KPL));
+    qemu_debug_puts ("generic interrupt handlers installed\n");
 
     // XXX Interrupts used for TRACE IPIs
     setgd(&idt[62], hwirq_62, 0, SDT_SYSIGT, SEL_KPL, GSEL(KCODE_SEL, SEL_KPL));
     setgd(&idt[63], hwirq_63, 0, SDT_SYSIGT, SEL_KPL, GSEL(KCODE_SEL, SEL_KPL));
+    qemu_debug_puts ("TRACE IPI handlers installed\n");
 
     // Setup local APIC interrupt handlers
     setgd(&idt[248], hwirq_248, 0, SDT_SYSIGT, SEL_KPL, GSEL(KCODE_SEL, SEL_KPL));
@@ -1244,7 +1254,9 @@ void setup_default_idt(void)
     setgd(&idt[252], hwirq_252, 0, SDT_SYSIGT, SEL_KPL, GSEL(KCODE_SEL, SEL_KPL));
     setgd(&idt[253], hwirq_253, 0, SDT_SYSIGT, SEL_KPL, GSEL(KCODE_SEL, SEL_KPL));
     setgd(&idt[254], hwirq_254, 0, SDT_SYSIGT, SEL_KPL, GSEL(KCODE_SEL, SEL_KPL));
+    qemu_debug_puts ("LAPIC interrupt handlers installed, about to LIDT..\n");
 
     /* Load IDT register */
     __asm volatile("lidt %0" :: "m" (region));
+    qemu_debug_puts ("LIDT!\n");
 }
