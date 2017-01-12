@@ -14,6 +14,8 @@
 
 #include <kernel.h>
 #include <paging_kernel_arch.h>
+#include <arch/x86/x86.h>
+#include <arch/x86/debug.h>
 
 #ifdef __k1om__
 #include <xeon_phi.h>
@@ -166,6 +168,13 @@ int paging_x86_64_map_memory(lpaddr_t base, size_t size)
  */
 void paging_x86_64_reset(void)
 {
+    printf ("---- layout:\n");
+    printf ("%25s: %16lx\n", "X86_64_PADDR_SPACE_LIMIT", X86_64_PADDR_SPACE_LIMIT);
+    printf ("%25s: %16lx\n", "X86_64_MEMORY_OFFSET",     X86_64_MEMORY_OFFSET);
+    printf ("%25s: %16lx\n", "cr3",                      rdcr3 ());
+    printf ("%25s: %16lx\n", "rip",                      rdrip ());
+    /* printf ("%25s: %0lx\n", "", ); */
+
     // Map kernel image so we don't lose ground
     if(paging_x86_64_map_memory(mem_to_local_phys((lvaddr_t)&_start_kernel),
                                 SIZE_KERNEL_IMAGE) != 0) {
@@ -184,8 +193,16 @@ void paging_x86_64_reset(void)
     }
 #endif
 
+    lvaddr_t newpml4 = (lvaddr_t) pml4;
+    debug_vaddr_identify (rdcr3 (),          (lvaddr_t) rdrip ());
+    debug_vaddr_identify (rdcr3 (),          (lvaddr_t) rdrsp ());
+    debug_vaddr_identify (newpml4,           (lvaddr_t) rdrip ());
+    debug_vaddr_identify (newpml4,           (lvaddr_t) rdrsp ());
+    paging_x86_64_make_good_pml4 (mem_to_local_phys (newpml4));
+    printf("paging_x86_64_reset switch\n");
     // Switch to new page layout
-    paging_x86_64_context_switch(mem_to_local_phys((lvaddr_t)pml4));
+    paging_x86_64_context_switch(mem_to_local_phys(newpml4));
+    qemu_debug_puts ("paging_x86_64_reset switched ok\n");
 }
 
 /**
