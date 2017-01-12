@@ -14,6 +14,7 @@
 , gnused
 , m4
 , qemu
+, irony-server
 
 , ghc-version ? "ghc801"
 
@@ -59,6 +60,8 @@ let src-repo = fetchgit {
 
 	# custom GHC
 	ghc
+
+	irony-server
     ];
 in
 stdenv.mkDerivation {
