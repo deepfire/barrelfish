@@ -161,7 +161,7 @@ cCompiler arch compiler opt_flags opts phase src obj =
                 ++ [ Str f | f <- extraDefines opts ]
         deps = (optDependencies opts) ++ (extraDependencies opts)
     in
-      [ Str compiler ] ++ flags ++ (map Str opt_flags)
+      [ Str $ "$(CC_" ++ arch ++ ")" ] ++ flags ++ (map Str opt_flags)
       ++ concat [ [ NStr "-I", i ] | i <- incls ] 
       ++ [ Str "-o", Out arch obj,
            Str "-c", In (if phase == "src" then SrcTree else BuildTree) phase src ]

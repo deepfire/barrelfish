@@ -458,10 +458,13 @@ makefilePreamble h opts args =
              "HAKE_ARCHS=" ++ intercalate " " Config.architectures,
              -- Disable built-in implicit rules. GNU make adds environment's MAKEFLAGS too.
              "MAKEFLAGS=r",
+             -- Make the compiler overridable.
              -- Explicitly disable the flex and bison implicit rules
              "%.c : %.y",
              "%.c : %.l",
-             "INSTALL_PREFIX ?= /home/netos/tftpboot/$(USER)" ])
+             "INSTALL_PREFIX ?= /home/netos/tftpboot/$(USER)" ] ++
+           [ "CC_" ++ arch ++ "?=" ++ (compiler $ options arch)
+           | arch <- Config.architectures ])
 
 -- There a several valid top-level build directores, apart from the
 -- architecture-specific one.
