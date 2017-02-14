@@ -732,23 +732,17 @@ void arch_init(uint64_t magic, void *pointer)
 
 #if defined (CONFIG_KERNEL_STACK_TRACE)
     // Now that address dances are somewhat settled, let's instate some comfort:
-    int nsyms = symtab->sh_size / sizeof (struct Elf64_Sym);
-
     struct Elf64_Shdr *dynstr_sectn = elf64_find_section_header_type((struct Elf64_Shdr *)
 								     (lpaddr_t)elf->addr,
 								     elf->num, SHT_STRTAB);
     if (dynstr_sectn == NULL) {
-        panic("Kernel image does not include symbol strings!");
+        panic("CONFIG_KERNEL_STACK_TRACE was enabled, but the kernel image has no .dynstr section!");
     }
-    char *dynstr = (char *)(dynstr_sectn->sh_addr - X86_64_START_KERNEL_PHYS + &_start_kernel);
-
-    uint64_t stack_bottom = local_phys_to_mem ((lpaddr_t) & x86_64_kernel_stack);
+    lvaddr_t stack_bottom = local_phys_to_mem ((lpaddr_t) & x86_64_kernel_stack);
     debug_setup_stackwalker (stack_bottom + sizeof x86_64_kernel_stack, stack_bottom,
-			     (lpaddr_t) &_start_kernel_text, (lpaddr_t) &_end_kernel_text,
-			     syms, dynstr, nsyms);
-
-    debug_sort_dynsyms (syms, nsyms);
-    debug_relocate_dynsyms (syms, nsyms, X86_64_MEMORY_OFFSET - X86_64_START_KERNEL_PHYS + (uint64_t) &_start_kernel);
+                             (lpaddr_t) &_start_kernel_text, (lpaddr_t) &_end_kernel_text,
+                             syms, (char *)(dynstr_sectn->sh_addr - START_KERNEL_PHYS + &_start_kernel),
+                             symtab->sh_size / sizeof (struct Elf64_Sym));
 #endif
 
     printf("About to call reloc_text_init() at 0x%"PRIxLVADDR"\n", (long unsigned int) reloc_text_init);

@@ -354,6 +354,9 @@ void debug_setup_stackwalker (_unused lvaddr_t stack_top, _unused lvaddr_t stack
     debug_stackwalker_dynstr       = dynstr;
     debug_stackwalker_nsyms        = nsyms;
 
+    debug_sort_dynsyms (dynsyms, nsyms);
+    debug_relocate_dynsyms (dynsyms, nsyms, X86_64_MEMORY_OFFSET - START_KERNEL_PHYS + (uint64_t) &_start_kernel);
+
     printf ("Initialized stack walker with stack 0x%lx-0x%lx, text 0x%lx-0x%lx (rbp=%lx, rsp=%lx)\n"
 	    , stack_top, stack_bottom, text_start, text_end, rbp, rsp);
 #else
